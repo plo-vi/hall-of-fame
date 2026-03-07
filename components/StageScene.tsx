@@ -103,9 +103,8 @@ export function Character({
               borderRadius: "14px",
               width: "240px",
               textAlign: "center",
-              boxShadow:
-                "0 0 25px rgba(255,180,120,0.6)",
-              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(255, 214, 144, 0.45)",
+              boxShadow: "0 0 20px rgba(255,180,120,0.45)",
             }}
           >
             <h3 style={{ margin: 0, color: "#ffcf9a" }}>
