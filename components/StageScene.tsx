@@ -5,7 +5,6 @@ import { OrthographicCamera, useGLTF, useProgress, useTexture } from "@react-thr
 import { Suspense, useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { Html } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -26,12 +25,9 @@ export function Character({
   modelPath,
   position,
   scale = 1,
-  name,
-  description,
   onClick,
 }: CharacterProps) {
   const { scene } = useGLTF(modelPath);
-  const [hovered, setHovered] = useState(false);
 
   // Внутренняя группа для анимации (чтобы не ломать position)
   const animatedRef = useRef<THREE.Group>(null);
@@ -73,12 +69,10 @@ export function Character({
           object={scene}
           onPointerOver={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
-            setHovered(true);
             document.body.style.cursor = onClick ? "pointer" : "default";
           }}
           onPointerOut={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
-            setHovered(false);
             document.body.style.cursor = "default";
           }}
           onClick={(e: ThreeEvent<MouseEvent>) => {
@@ -87,35 +81,6 @@ export function Character({
           }}
         />
       </group>
-
-      {hovered && (
-        <Html
-          position={[0, 0.2, 0]}
-          center
-          distanceFactor={12}
-          style={{ pointerEvents: "none" }}
-        >
-          <div
-            style={{
-              background: "rgba(0,0,0,0.75)",
-              color: "white",
-              padding: "14px 18px",
-              borderRadius: "14px",
-              width: "240px",
-              textAlign: "center",
-              border: "1px solid rgba(255, 214, 144, 0.45)",
-              boxShadow: "0 0 20px rgba(255,180,120,0.45)",
-            }}
-          >
-            <h3 style={{ margin: 0, color: "#ffcf9a" }}>
-              {name}
-            </h3>
-            <p style={{ marginTop: 8, fontSize: 14 }}>
-              {description}
-            </p>
-          </div>
-        </Html>
-      )}
     </group>
   );
 }
