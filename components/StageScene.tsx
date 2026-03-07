@@ -7,9 +7,9 @@ import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { Html } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
-import { useRouter } from "next/navigation";
 
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+const withBasePath = (path: string) => `${ASSET_BASE}${path}`;
 
 /* -------------------- ПЕРСОНАЖ -------------------- */
 
@@ -213,7 +213,6 @@ function Lights() {
 /* -------------------- СЦЕНА -------------------- */
 
 export default function StageScene() {
-  const router = useRouter();
   const { active, progress } = useProgress();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [targetName, setTargetName] = useState("");
@@ -254,7 +253,7 @@ export default function StageScene() {
     setIsTransitioning(true);
     document.body.style.cursor = "default";
     transitionTimeoutRef.current = setTimeout(() => {
-      router.push(href);
+      window.location.assign(href);
     }, 1300);
     transitionResetRef.current = setTimeout(() => {
       setIsTransitioning(false);
@@ -305,7 +304,7 @@ export default function StageScene() {
               scale={2.4}
               name="Елена"
               description="Лидер сцены и обладательница выдающихся наград."
-              onClick={() => startTransition("/hall/elena", "Елена")}
+              onClick={() => startTransition(withBasePath("/hall/elena/"), "Елена")}
             />
 
             <Character
@@ -314,7 +313,7 @@ export default function StageScene() {
               scale={2.4}
               name="Дарья"
               description="Звезда труппы с яркой серией достижений."
-              onClick={() => startTransition("/hall/darya", "Дарья")}
+              onClick={() => startTransition(withBasePath("/hall/darya/"), "Дарья")}
             />
           </Suspense>
           <EffectComposer>
