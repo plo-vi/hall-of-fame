@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 
+const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export default function CurtainOverlay({
   onOpen,
 }: {
@@ -10,7 +12,7 @@ export default function CurtainOverlay({
   const [open, setOpen] = useState(false);
   const leftPanelTransition = "transform 1.35s cubic-bezier(0.2, 0.85, 0.16, 1)";
   const rightPanelTransition = "transform 1.45s cubic-bezier(0.18, 0.82, 0.18, 1)";
-  const curtainImage = "/story.png";
+  const curtainImage = `${ASSET_BASE}/story.png`;
 
   const handleClick = () => {
     if (open) return;

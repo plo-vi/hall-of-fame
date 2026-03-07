@@ -1,5 +1,13 @@
 import Link from "next/link";
 
+const HALL_IDS = ["elena", "darya"] as const;
+
+export function generateStaticParams() {
+  return HALL_IDS.map((id) => ({ id }));
+}
+
+export const dynamicParams = false;
+
 export default async function PersonPage({
   params,
 }: {

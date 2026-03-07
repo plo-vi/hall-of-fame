@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CurtainOverlay from "../components/CurtainOverlay";
 import StageScene from "../components/StageScene";
 
 export default function Home() {
+  return (
+    <Suspense fallback={<StageScene />}>
+      <HomeContent />
+    </Suspense>
+  );
+}
+
+function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [skipCurtainOnce] = useState(

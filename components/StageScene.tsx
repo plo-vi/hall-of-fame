@@ -9,6 +9,8 @@ import { Html } from "@react-three/drei";
 import { ThreeEvent } from "@react-three/fiber";
 import { useRouter } from "next/navigation";
 
+const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 /* -------------------- ПЕРСОНАЖ -------------------- */
 
 type CharacterProps = {
@@ -222,7 +224,7 @@ export default function StageScene() {
 
   useEffect(() => {
     const img = new Image();
-    img.src = "/theater-stage.png";
+    img.src = `${ASSET_BASE}/theater-stage.png`;
     img.onload = () => setBgReady(true);
     img.onerror = () => setBgReady(true);
   }, []);
@@ -266,7 +268,7 @@ export default function StageScene() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: "url('/theater-stage.png')",
+          backgroundImage: `url('${ASSET_BASE}/theater-stage.png')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           opacity: sceneReady ? 1 : 0,
@@ -291,7 +293,7 @@ export default function StageScene() {
             <MistLayer />
 
             <Character
-              modelPath="/models/anna.glb"
+              modelPath={`${ASSET_BASE}/models/anna.glb`}
               position={[-1.2, -1.30, 0]}
               scale={2.4}
               name="Елена"
@@ -300,7 +302,7 @@ export default function StageScene() {
             />
 
             <Character
-              modelPath="/models/olga.glb"
+              modelPath={`${ASSET_BASE}/models/olga.glb`}
               position={[1.2, -1.30, 0]}
               scale={2.4}
               name="Дарья"
@@ -408,9 +410,9 @@ export default function StageScene() {
   );
 }
 
-useGLTF.preload("/models/anna.glb");
-useGLTF.preload("/models/olga.glb");
-useTexture.preload("/stage-fog.png");
+useGLTF.preload(`${ASSET_BASE}/models/anna.glb`);
+useGLTF.preload(`${ASSET_BASE}/models/olga.glb`);
+useTexture.preload(`${ASSET_BASE}/stage-fog.png`);
 
 function BeamParticles({
   position,
@@ -588,7 +590,7 @@ function FloatingDust() {
 }
 
 function StageFog() {
-  const texture = useTexture("/stage-fog.png");
+  const texture = useTexture(`${ASSET_BASE}/stage-fog.png`);
   const ref = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
@@ -619,7 +621,7 @@ function StageFog() {
 }
 
 function MistLayer() {
-  const texture = useTexture("/stage-fog.png");
+  const texture = useTexture(`${ASSET_BASE}/stage-fog.png`);
   const ref = useRef<THREE.Mesh>(null);
 
   useFrame(({ clock }) => {
