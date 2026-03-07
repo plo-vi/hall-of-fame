@@ -221,6 +221,7 @@ export default function StageScene() {
   const [bgReady, setBgReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitionResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const img = new Image();
@@ -241,6 +242,9 @@ export default function StageScene() {
       if (transitionTimeoutRef.current) {
         clearTimeout(transitionTimeoutRef.current);
       }
+      if (transitionResetRef.current) {
+        clearTimeout(transitionResetRef.current);
+      }
       document.body.style.cursor = "default";
     };
   }, []);
@@ -253,6 +257,10 @@ export default function StageScene() {
     transitionTimeoutRef.current = setTimeout(() => {
       router.push(href);
     }, 1300);
+    transitionResetRef.current = setTimeout(() => {
+      setIsTransitioning(false);
+      setTargetName("");
+    }, 3600);
   };
 
   return (
