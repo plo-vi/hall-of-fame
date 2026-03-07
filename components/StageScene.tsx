@@ -1,6 +1,6 @@
 "use client";
 
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrthographicCamera, useGLTF, useProgress, useTexture } from "@react-three/drei";
 import { Suspense, useMemo, useRef, useEffect, useState } from "react";
 import * as THREE from "three";
@@ -21,7 +21,13 @@ type CharacterProps = {
   side: "left" | "right";
   onHoverChange?: (
     hovered: boolean,
-    payload: { name: string; description: string; side: "left" | "right" }
+    payload: {
+      name: string;
+      description: string;
+      side: "left" | "right";
+      anchorX: number;
+      anchorY: number;
+    }
   ) => void;
   onClick?: () => void;
 };
@@ -37,6 +43,7 @@ export function Character({
   onClick,
 }: CharacterProps) {
   const { scene } = useGLTF(modelPath);
+  const worldPosition = useRef(new THREE.Vector3());
 
   // Внутренняя группа для анимации (чтобы не ломать position)
   const animatedRef = useRef<THREE.Group>(null);
@@ -71,6 +78,15 @@ export function Character({
     );
   });
 
+  const emitHover = (hovered: boolean, e: ThreeEvent<PointerEvent>) => {
+    if (!animatedRef.current) return;
+    animatedRef.current.getWorldPosition(worldPosition.current);
+    const projected = worldPosition.current.clone().project(e.camera);
+    const anchorX = (projected.x * 0.5 + 0.5) * window.innerWidth;
+    const anchorY = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+    onHoverChange?.(hovered, { name, description, side, anchorX, anchorY });
+  };
+
   return (
     <group position={position}>
       <group ref={animatedRef}>
@@ -79,12 +95,12 @@ export function Character({
           onPointerOver={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
             document.body.style.cursor = onClick ? "pointer" : "default";
-            onHoverChange?.(true, { name, description, side });
+            emitHover(true, e);
           }}
           onPointerOut={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
             document.body.style.cursor = "default";
-            onHoverChange?.(false, { name, description, side });
+            emitHover(false, e);
           }}
           onClick={(e: ThreeEvent<MouseEvent>) => {
             e.stopPropagation();
@@ -186,6 +202,80 @@ function Lights() {
   )
 }
 
+function StageBackdrop({ texturePath }: { texturePath: string }) {
+  const texture = useTexture(texturePath);
+  const { viewport } = useThree();
+
+  const { width, height } = useMemo(() => {
+    const image = texture.image as { width?: number; height?: number } | undefined;
+    const textureAspect =
+      image && image.width && image.height ? image.width / image.height : 16 / 9;
+    const viewportAspect = viewport.width / viewport.height;
+
+    if (viewportAspect > textureAspect) {
+      const width = viewport.width;
+      return { width, height: width / textureAspect };
+    }
+
+    const height = viewport.height;
+    return { width: height * textureAspect, height };
+  }, [texture.image, viewport.height, viewport.width]);
+
+  return (
+    <mesh position={[0, 0, -8]}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial map={texture} toneMapped={false} />
+    </mesh>
+  );
+}
+
+function StageCharacters({
+  onHoverChange,
+  onSelect,
+}: {
+  onHoverChange: (
+    hovered: boolean,
+    payload: {
+      name: string;
+      description: string;
+      side: "left" | "right";
+      anchorX: number;
+      anchorY: number;
+    }
+  ) => void;
+  onSelect: (href: string, name: string) => void;
+}) {
+  const { viewport } = useThree();
+  const xOffset = viewport.width * 0.13;
+  const yOffset = -viewport.height * 0.17;
+
+  return (
+    <>
+      <Character
+        modelPath={`${ASSET_BASE}/models/anna.glb`}
+        position={[-xOffset, yOffset, 0]}
+        scale={2.45}
+        name="Елена"
+        description="Лидер сцены и обладательница выдающихся наград."
+        side="left"
+        onHoverChange={onHoverChange}
+        onClick={() => onSelect(withBasePath("/hall/elena/"), "Елена")}
+      />
+
+      <Character
+        modelPath={`${ASSET_BASE}/models/olga.glb`}
+        position={[xOffset, yOffset, 0]}
+        scale={2.45}
+        name="Дарья"
+        description="Звезда труппы с яркой серией достижений."
+        side="right"
+        onHoverChange={onHoverChange}
+        onClick={() => onSelect(withBasePath("/hall/darya/"), "Дарья")}
+      />
+    </>
+  );
+}
+
 /* -------------------- СЦЕНА -------------------- */
 
 export default function StageScene() {
@@ -198,6 +288,8 @@ export default function StageScene() {
     name: string;
     description: string;
     side: "left" | "right";
+    anchorX: number;
+    anchorY: number;
   } | null>(null);
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -205,7 +297,7 @@ export default function StageScene() {
 
   useEffect(() => {
     const img = new Image();
-    img.src = `${ASSET_BASE}/theater-stage.png`;
+    img.src = `${ASSET_BASE}/stage-new.png`;
     img.onload = () => setBgReady(true);
     img.onerror = () => setBgReady(true);
   }, []);
@@ -277,9 +369,6 @@ export default function StageScene() {
         style={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url('${ASSET_BASE}/theater-stage.png')`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
           opacity: sceneReady ? 1 : 0,
           transition: "opacity 350ms ease",
         }}
@@ -292,6 +381,7 @@ export default function StageScene() {
           />
 
           <Suspense fallback={null}>
+            <StageBackdrop texturePath={`${ASSET_BASE}/stage-new.png`} />
             <Lights />
             <ambientLight intensity={0.6} color="#ffe0a3" />
             <BeamParticles position={[-2.15, -0.9, 0]} direction={1} />
@@ -301,26 +391,9 @@ export default function StageScene() {
             <StageFog />
             <MistLayer />
 
-            <Character
-              modelPath={`${ASSET_BASE}/models/anna.glb`}
-              position={[-1, -0.95, 0]}
-              scale={2.45}
-              name="Елена"
-              description="Лидер сцены и обладательница выдающихся наград."
-              side="left"
+            <StageCharacters
               onHoverChange={(hovered, payload) => setHoverCard(hovered ? payload : null)}
-              onClick={() => startTransition(withBasePath("/hall/elena/"), "Елена")}
-            />
-
-            <Character
-              modelPath={`${ASSET_BASE}/models/olga.glb`}
-              position={[1, -0.95, 0]}
-              scale={2.45}
-              name="Дарья"
-              description="Звезда труппы с яркой серией достижений."
-              side="right"
-              onHoverChange={(hovered, payload) => setHoverCard(hovered ? payload : null)}
-              onClick={() => startTransition(withBasePath("/hall/darya/"), "Дарья")}
+              onSelect={startTransition}
             />
           </Suspense>
           <EffectComposer>
@@ -395,8 +468,8 @@ export default function StageScene() {
         <div
           style={{
             position: "absolute",
-            top: "62%",
-            left: hoverCard.side === "left" ? "40%" : "60%",
+            top: `calc(${hoverCard.anchorY + 110}px - 20vh)`,
+            left: `${hoverCard.anchorX}px`,
             transform: "translateX(-50%)",
             width: "min(280px, 36vw)",
             background: "rgba(0,0,0,0.75)",
