@@ -363,6 +363,9 @@ export default function StageScene() {
         width: "100vw",
         height: "100vh",
         backgroundColor: "#090606",
+        backgroundImage: `url('${ASSET_BASE}/stage-new.png')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
       }}
     >
       <div
@@ -382,15 +385,21 @@ export default function StageScene() {
 
           <Suspense fallback={null}>
             <StageBackdrop texturePath={`${ASSET_BASE}/stage-new.png`} />
-            <Lights />
-            <ambientLight intensity={0.6} color="#ffe0a3" />
+          </Suspense>
+
+          <Lights />
+          <ambientLight intensity={0.6} color="#ffe0a3" />
+
+          <Suspense fallback={null}>
             <BeamParticles position={[-2.15, -0.9, 0]} direction={1} />
             <BeamParticles position={[2.15, -0.9, 0]} direction={-1} />
             <FloatingDust />
 
             <StageFog />
             <MistLayer />
+          </Suspense>
 
+          <Suspense fallback={null}>
             <StageCharacters
               onHoverChange={(hovered, payload) => setHoverCard(hovered ? payload : null)}
               onSelect={startTransition}
