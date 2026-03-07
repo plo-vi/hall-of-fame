@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 const ASSET_BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
@@ -10,14 +10,21 @@ export default function CurtainOverlay({
   onOpen: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const didNotifyRef = useRef(false);
   const leftPanelTransition = "transform 1.35s cubic-bezier(0.2, 0.85, 0.16, 1)";
   const rightPanelTransition = "transform 1.45s cubic-bezier(0.18, 0.82, 0.18, 1)";
   const curtainImage = `${ASSET_BASE}/story.png`;
 
+  const notifyOpened = () => {
+    if (didNotifyRef.current) return;
+    didNotifyRef.current = true;
+    onOpen();
+  };
+
   const handleClick = () => {
     if (open) return;
     setOpen(true);
-    setTimeout(onOpen, 1200);
+    setTimeout(notifyOpened, 1700);
   };
 
   return (
@@ -32,6 +39,8 @@ export default function CurtainOverlay({
         zIndex: 1000,
         overflow: "hidden",
         cursor: "pointer",
+        background: "#090606",
+        pointerEvents: open ? "none" : "auto",
       }}
     >
       <div
@@ -39,8 +48,8 @@ export default function CurtainOverlay({
           position: "absolute",
           inset: 0,
           background: "radial-gradient(circle at center, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.62) 100%)",
-          opacity: open ? 0.4 : 1,
-          transition: "opacity 1.2s ease",
+          opacity: open ? 0 : 1,
+          transition: "opacity 700ms ease",
         }}
       />
 
@@ -60,7 +69,7 @@ export default function CurtainOverlay({
           boxShadow: "inset -18px 0 28px rgba(0,0,0,0.42)",
           transformOrigin: "left center",
           transform: open
-            ? "translateX(-106%) rotate(-2deg) scaleX(0.95) translateY(-0.6%)"
+            ? "translateX(-106%) rotate(-1deg) scaleX(0.95)"
             : "translateX(0) rotate(0deg) scaleX(1)",
           transition: leftPanelTransition,
           filter: open ? "brightness(0.9) saturate(1.05)" : "brightness(1) saturate(1)",
@@ -83,11 +92,12 @@ export default function CurtainOverlay({
           boxShadow: "inset 18px 0 28px rgba(0,0,0,0.42)",
           transformOrigin: "right center",
           transform: open
-            ? "translateX(106%) rotate(2deg) scaleX(0.95) translateY(-0.6%)"
+            ? "translateX(106%) rotate(1deg) scaleX(0.95)"
             : "translateX(0) rotate(0deg) scaleX(1)",
           transition: rightPanelTransition,
           filter: open ? "brightness(0.9) saturate(1.05)" : "brightness(1) saturate(1)",
         }}
+        onTransitionEnd={open ? notifyOpened : undefined}
       />
 
 
