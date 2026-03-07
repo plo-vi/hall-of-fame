@@ -303,8 +303,8 @@ export default function StageScene() {
 
             <Character
               modelPath={`${ASSET_BASE}/models/anna.glb`}
-              position={[-1.2, -1.30, 0]}
-              scale={2.4}
+              position={[-1, -0.95, 0]}
+              scale={2.45}
               name="Елена"
               description="Лидер сцены и обладательница выдающихся наград."
               side="left"
@@ -314,8 +314,8 @@ export default function StageScene() {
 
             <Character
               modelPath={`${ASSET_BASE}/models/olga.glb`}
-              position={[1.2, -1.30, 0]}
-              scale={2.4}
+              position={[1, -0.95, 0]}
+              scale={2.45}
               name="Дарья"
               description="Звезда труппы с яркой серией достижений."
               side="right"
@@ -395,10 +395,10 @@ export default function StageScene() {
         <div
           style={{
             position: "absolute",
-            top: "18%",
-            left: hoverCard.side === "left" ? "30%" : "70%",
+            top: "62%",
+            left: hoverCard.side === "left" ? "40%" : "60%",
             transform: "translateX(-50%)",
-            width: "min(300px, 34vw)",
+            width: "min(280px, 36vw)",
             background: "rgba(0,0,0,0.75)",
             color: "#fff",
             padding: "14px 16px",
