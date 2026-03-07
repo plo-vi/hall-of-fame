@@ -18,6 +18,11 @@ type CharacterProps = {
   scale?: number;
   name: string;
   description: string;
+  side: "left" | "right";
+  onHoverChange?: (
+    hovered: boolean,
+    payload: { name: string; description: string; side: "left" | "right" }
+  ) => void;
   onClick?: () => void;
 };
 
@@ -25,6 +30,10 @@ export function Character({
   modelPath,
   position,
   scale = 1,
+  name,
+  description,
+  side,
+  onHoverChange,
   onClick,
 }: CharacterProps) {
   const { scene } = useGLTF(modelPath);
@@ -70,10 +79,12 @@ export function Character({
           onPointerOver={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
             document.body.style.cursor = onClick ? "pointer" : "default";
+            onHoverChange?.(true, { name, description, side });
           }}
           onPointerOut={(e: ThreeEvent<PointerEvent>) => {
             e.stopPropagation();
             document.body.style.cursor = "default";
+            onHoverChange?.(false, { name, description, side });
           }}
           onClick={(e: ThreeEvent<MouseEvent>) => {
             e.stopPropagation();
@@ -183,8 +194,14 @@ export default function StageScene() {
   const [targetName, setTargetName] = useState("");
   const [bgReady, setBgReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  const [hoverCard, setHoverCard] = useState<{
+    name: string;
+    description: string;
+    side: "left" | "right";
+  } | null>(null);
   const transitionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const transitionResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingFailSafeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const img = new Image();
@@ -194,11 +211,29 @@ export default function StageScene() {
   }, []);
 
   useEffect(() => {
-    if (bgReady && !active && progress >= 100) {
+    if (sceneReady) return;
+    if (bgReady && !active && progress >= 95) {
       const id = setTimeout(() => setSceneReady(true), 120);
       return () => clearTimeout(id);
     }
-  }, [active, bgReady, progress]);
+  }, [active, bgReady, progress, sceneReady]);
+
+  useEffect(() => {
+    if (!bgReady || sceneReady) return;
+    if (loadingFailSafeRef.current) {
+      clearTimeout(loadingFailSafeRef.current);
+    }
+    // GitHub Pages может не довести progress до 100 из-за asset manager edge-cases.
+    loadingFailSafeRef.current = setTimeout(() => {
+      setSceneReady(true);
+    }, 4500);
+
+    return () => {
+      if (loadingFailSafeRef.current) {
+        clearTimeout(loadingFailSafeRef.current);
+      }
+    };
+  }, [bgReady, sceneReady]);
 
   useEffect(() => {
     return () => {
@@ -207,6 +242,9 @@ export default function StageScene() {
       }
       if (transitionResetRef.current) {
         clearTimeout(transitionResetRef.current);
+      }
+      if (loadingFailSafeRef.current) {
+        clearTimeout(loadingFailSafeRef.current);
       }
       document.body.style.cursor = "default";
     };
@@ -269,6 +307,8 @@ export default function StageScene() {
               scale={2.4}
               name="Елена"
               description="Лидер сцены и обладательница выдающихся наград."
+              side="left"
+              onHoverChange={(hovered, payload) => setHoverCard(hovered ? payload : null)}
               onClick={() => startTransition(withBasePath("/hall/elena/"), "Елена")}
             />
 
@@ -278,6 +318,8 @@ export default function StageScene() {
               scale={2.4}
               name="Дарья"
               description="Звезда труппы с яркой серией достижений."
+              side="right"
+              onHoverChange={(hovered, payload) => setHoverCard(hovered ? payload : null)}
               onClick={() => startTransition(withBasePath("/hall/darya/"), "Дарья")}
             />
           </Suspense>
@@ -348,6 +390,32 @@ export default function StageScene() {
       >
         Нажмите на персонажа, чтобы открыть персональный зал наград
       </div>
+
+      {hoverCard && !isTransitioning && (
+        <div
+          style={{
+            position: "absolute",
+            top: "18%",
+            left: hoverCard.side === "left" ? "30%" : "70%",
+            transform: "translateX(-50%)",
+            width: "min(300px, 34vw)",
+            background: "rgba(0,0,0,0.75)",
+            color: "#fff",
+            padding: "14px 16px",
+            borderRadius: "12px",
+            border: "1px solid rgba(255, 214, 144, 0.45)",
+            boxShadow: "0 0 20px rgba(255,180,120,0.45)",
+            textAlign: "center",
+            zIndex: 9,
+            pointerEvents: "none",
+          }}
+        >
+          <h3 style={{ margin: 0, color: "#ffcf9a", fontSize: "18px" }}>{hoverCard.name}</h3>
+          <p style={{ margin: "8px 0 0", fontSize: "14px", lineHeight: 1.35 }}>
+            {hoverCard.description}
+          </p>
+        </div>
+      )}
 
       <div
         style={{
