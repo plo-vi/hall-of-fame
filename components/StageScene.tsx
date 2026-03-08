@@ -405,9 +405,11 @@ export default function StageScene() {
         <div
           style={{
             position: "absolute",
-            left: "10px",
-            right: "10px",
+            left: "50%",
             top: "18px",
+            transform: "translateX(-50%)",
+            width: "fit-content",
+            maxWidth: "calc(100vw - 20px)",
             padding: "10px 14px",
             borderRadius: "999px",
             border: "1px solid rgba(255, 214, 144, 0.45)",
@@ -417,7 +419,8 @@ export default function StageScene() {
             fontSize: "13px",
             letterSpacing: "0.03em",
             textAlign: "center",
-            zIndex: 6,
+            zIndex: 11,
+            pointerEvents: "none",
             opacity: isTransitioning ? 0 : 1,
             transition: "opacity 240ms ease",
           }}
@@ -607,10 +610,11 @@ export default function StageScene() {
       <div
         style={{
           position: "absolute",
-          left: "12px",
-          right: "12px",
+          left: "50%",
           top: "22px",
-          width: "auto",
+          transform: "translateX(-50%)",
+          width: "fit-content",
+          maxWidth: "calc(100vw - 24px)",
           padding: "10px 16px",
           borderRadius: "999px",
           border: "1px solid rgba(255, 214, 144, 0.45)",
