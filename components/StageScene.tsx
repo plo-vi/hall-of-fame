@@ -452,46 +452,34 @@ export default function StageScene() {
           style={{
             position: "absolute",
             inset: 0,
-            display: "flex",
-            alignItems: "flex-end",
-            justifyContent: "center",
-            gap: "12px",
-            padding: "0 12px 18vh",
+            opacity: sceneReady ? 1 : 0,
+            transition: "opacity 350ms ease",
             zIndex: 7,
           }}
         >
-          <button
-            onClick={() => startTransition(withBasePath("/hall/elena/"), "Елена")}
-            style={{
-              flex: 1,
-              maxWidth: "220px",
-              border: "1px solid rgba(255, 214, 144, 0.55)",
-              borderRadius: "14px",
-              background: "rgba(12, 8, 5, 0.82)",
-              color: "#ffe2af",
-              fontFamily: "Georgia, serif",
-              fontSize: "18px",
-              padding: "14px 12px",
-            }}
-          >
-            Елена
-          </button>
-          <button
-            onClick={() => startTransition(withBasePath("/hall/darya/"), "Дарья")}
-            style={{
-              flex: 1,
-              maxWidth: "220px",
-              border: "1px solid rgba(255, 214, 144, 0.55)",
-              borderRadius: "14px",
-              background: "rgba(12, 8, 5, 0.82)",
-              color: "#ffe2af",
-              fontFamily: "Georgia, serif",
-              fontSize: "18px",
-              padding: "14px 12px",
-            }}
-          >
-            Дарья
-          </button>
+          <Canvas orthographic>
+            <OrthographicCamera
+              makeDefault
+              position={[0, 0, 50]}
+              zoom={120}
+            />
+
+            <Suspense fallback={null}>
+              <StageBackdrop texturePath={`${ASSET_BASE}/stage-new.png`} />
+            </Suspense>
+
+            <Lights />
+            <ambientLight intensity={0.6} color="#ffe0a3" />
+
+            <Suspense fallback={null}>
+              <StageCharacters
+                onHoverChange={() => {
+                  // На мобильных отключаем hover-карточки для упрощения.
+                }}
+                onSelect={startTransition}
+              />
+            </Suspense>
+          </Canvas>
         </div>
 
         <div
