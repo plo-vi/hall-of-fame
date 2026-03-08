@@ -14,8 +14,6 @@ type HallRow = {
   text: string;
 };
 
-const ADMIN_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD ?? "theater-admin";
-
 function toIsoDate(value: string): string {
   const dot = value.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
   if (dot) {
@@ -68,7 +66,7 @@ function csvEscape(value: string): string {
 }
 
 function rowsToCsv(rows: HallRow[]): string {
-  const header = "id,name,date,text";
+  const header = "person_id,person_name,date,text";
   const lines = rows.map((row) =>
     [row.id, row.name, row.date, row.text].map((value) => csvEscape(value.trim())).join(","),
   );
@@ -111,9 +109,19 @@ function parseCsvToRows(csv: string): HallRow[] {
 
   if (lines.length <= 1) return [];
 
+  const headers = parseCsvLine(lines[0]).map((h) => h.toLowerCase());
+  const idIndex = headers.findIndex((h) => h === "id" || h === "person_id");
+  const nameIndex = headers.findIndex((h) => h === "name" || h === "person_name");
+  const dateIndex = headers.findIndex((h) => h === "date");
+  const textIndex = headers.findIndex((h) => h === "text");
+
   const rows: HallRow[] = [];
   for (let i = 1; i < lines.length; i += 1) {
-    const [idRaw, nameRaw, dateRaw, textRaw] = parseCsvLine(lines[i]);
+    const cells = parseCsvLine(lines[i]);
+    const idRaw = cells[idIndex] ?? "";
+    const nameRaw = cells[nameIndex] ?? "";
+    const dateRaw = cells[dateIndex] ?? "";
+    const textRaw = cells[textIndex] ?? "";
     const id = (idRaw ?? "").toLowerCase();
     const name = nameRaw ?? "";
     const date = dateRaw ?? "";
@@ -145,12 +153,16 @@ function StageAdminModal({
   onCancelAndExit,
 }: {
   initialRows: HallRow[];
-  onSaveAndExit: (rows: HallRow[]) => void;
+  onSaveAndExit: (rows: HallRow[]) => Promise<void> | void;
   onCancelAndExit: () => void;
 }) {
   const [rows, setRows] = useState<HallRow[]>(() => sortRows(parseStoredRows(initialRows)));
+  const [initialSnapshot] = useState(() =>
+    JSON.stringify(sortRows(parseStoredRows(initialRows))),
+  );
   const [activePersonId, setActivePersonId] = useState<"elena" | "darya">("elena");
   const [importError, setImportError] = useState("");
+  const hasUnsavedChanges = JSON.stringify(rows) !== initialSnapshot;
 
   const updateRow = (index: number, key: keyof HallRow, value: string) => {
     const normalizedValue = key === "date" ? fromIsoDate(value) : value;
@@ -206,6 +218,14 @@ function StageAdminModal({
     }
   };
 
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      const confirmed = window.confirm("Есть несохраненные изменения. Выйти без сохранения?");
+      if (!confirmed) return;
+    }
+    onCancelAndExit();
+  };
+
   const groups = useMemo(
     () => [
       { id: "elena", title: "Елена", rows: rows.map((row, index) => ({ row, index })).filter((e) => e.row.id === "elena") },
@@ -240,6 +260,11 @@ function StageAdminModal({
         }}
       >
         <h2 style={{ margin: "0 0 12px", color: "#f8d9a3" }}>Редактирование наград (обе страницы)</h2>
+        {hasUnsavedChanges && (
+          <p style={{ margin: "0 0 10px", color: "#ffd2a4", fontSize: "14px" }}>
+            Есть несохранённые изменения
+          </p>
+        )}
 
         <div
           style={{
@@ -442,7 +467,9 @@ function StageAdminModal({
             Скачать CSV
           </button>
           <button
-            onClick={() => onSaveAndExit(rows)}
+            onClick={() => {
+              void onSaveAndExit(rows);
+            }}
             style={{
               border: "1px solid rgba(255, 214, 148, 0.45)",
               background: "#2a1a13",
@@ -454,7 +481,7 @@ function StageAdminModal({
             Сохранить изменения и выйти
           </button>
           <button
-            onClick={onCancelAndExit}
+            onClick={handleCancel}
             style={{
               border: "1px solid rgba(255, 170, 140, 0.55)",
               background: "#3a1712",
@@ -480,6 +507,7 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
   const [showAdmin, setShowAdmin] = useState(false);
   const [password, setPassword] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [saveError, setSaveError] = useState("");
   const showCurtain = !curtainOpened;
 
   useEffect(() => {
@@ -490,14 +518,23 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
 
   const handleAdminLogin = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (password !== ADMIN_PASSWORD) {
-      setLoginError("Неверный пароль");
-      return;
-    }
-    setLoginError("");
-    setPassword("");
-    setShowAdminLogin(false);
-    setShowAdmin(true);
+    void (async () => {
+      setLoginError("");
+      const response = await fetch("/api/admin/achievements", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode: "auth", password }),
+      });
+
+      if (!response.ok) {
+        setLoginError("Неверный пароль");
+        return;
+      }
+
+      setPassword("");
+      setShowAdminLogin(false);
+      setShowAdmin(true);
+    })();
   };
 
   return (
@@ -602,14 +639,46 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
       {showAdmin && (
         <StageAdminModal
           initialRows={initialRows}
-          onSaveAndExit={(rows) => {
+          onSaveAndExit={async (rows) => {
+            setSaveError("");
+            const response = await fetch("/api/admin/achievements", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ rows }),
+            });
+            if (!response.ok) {
+              const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+              setSaveError(payload?.error ?? "Не удалось сохранить изменения на сервере.");
+              return;
+            }
             localStorage.setItem(ADMIN_ROWS_KEY, JSON.stringify(rows));
             setShowAdmin(false);
           }}
           onCancelAndExit={() => {
+            setSaveError("");
             setShowAdmin(false);
           }}
         />
+      )}
+
+      {saveError && (
+        <div
+          style={{
+            position: "fixed",
+            left: "50%",
+            bottom: "16px",
+            transform: "translateX(-50%)",
+            zIndex: 2300,
+            color: "#ffd2b6",
+            background: "rgba(46, 14, 10, 0.95)",
+            border: "1px solid rgba(255, 170, 140, 0.55)",
+            borderRadius: "8px",
+            padding: "8px 10px",
+            fontFamily: "Georgia, serif",
+          }}
+        >
+          {saveError}
+        </div>
       )}
     </>
   );
