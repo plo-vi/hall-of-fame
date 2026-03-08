@@ -75,6 +75,55 @@ function rowsToCsv(rows: HallRow[]): string {
   return [header, ...lines].join("\n");
 }
 
+function parseCsvLine(line: string): string[] {
+  const values: string[] = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      const next = line[i + 1];
+      if (inQuotes && next === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === "," && !inQuotes) {
+      values.push(current.trim());
+      current = "";
+      continue;
+    }
+    current += ch;
+  }
+  values.push(current.trim());
+  return values;
+}
+
+function parseCsvToRows(csv: string): HallRow[] {
+  const lines = csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length <= 1) return [];
+
+  const rows: HallRow[] = [];
+  for (let i = 1; i < lines.length; i += 1) {
+    const [idRaw, nameRaw, dateRaw, textRaw] = parseCsvLine(lines[i]);
+    const id = (idRaw ?? "").toLowerCase();
+    const name = nameRaw ?? "";
+    const date = dateRaw ?? "";
+    const text = textRaw ?? "";
+    if (!id || !name || !date || !text) continue;
+    rows.push({ id, name, date, text });
+  }
+  return sortRows(rows);
+}
+
 function parseStoredRows(initialRows: HallRow[]): HallRow[] {
   if (typeof window === "undefined") return initialRows;
   const raw = localStorage.getItem(ADMIN_ROWS_KEY);
@@ -101,6 +150,7 @@ function StageAdminModal({
 }) {
   const [rows, setRows] = useState<HallRow[]>(() => sortRows(parseStoredRows(initialRows)));
   const [activePersonId, setActivePersonId] = useState<"elena" | "darya">("elena");
+  const [importError, setImportError] = useState("");
 
   const updateRow = (index: number, key: keyof HallRow, value: string) => {
     const normalizedValue = key === "date" ? fromIsoDate(value) : value;
@@ -141,6 +191,21 @@ function StageAdminModal({
     URL.revokeObjectURL(url);
   };
 
+  const importCsv = async (file: File) => {
+    try {
+      const text = await file.text();
+      const nextRows = parseCsvToRows(text);
+      if (nextRows.length === 0) {
+        setImportError("Файл пустой или имеет неверный формат.");
+        return;
+      }
+      setRows(nextRows);
+      setImportError("");
+    } catch {
+      setImportError("Не удалось прочитать CSV-файл.");
+    }
+  };
+
   const groups = useMemo(
     () => [
       { id: "elena", title: "Елена", rows: rows.map((row, index) => ({ row, index })).filter((e) => e.row.id === "elena") },
@@ -175,6 +240,42 @@ function StageAdminModal({
         }}
       >
         <h2 style={{ margin: "0 0 12px", color: "#f8d9a3" }}>Редактирование наград (обе страницы)</h2>
+
+        <div
+          style={{
+            marginBottom: "12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            flexWrap: "wrap",
+          }}
+        >
+          <label
+            style={{
+              border: "1px solid rgba(255, 214, 148, 0.45)",
+              background: "#2a1a13",
+              color: "#ffe1a2",
+              borderRadius: "8px",
+              padding: "8px 12px",
+              cursor: "pointer",
+            }}
+          >
+            Импорт CSV
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              style={{ display: "none" }}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  void importCsv(file);
+                }
+                e.currentTarget.value = "";
+              }}
+            />
+          </label>
+          {importError && <span style={{ color: "#ff9c8f", fontSize: "13px" }}>{importError}</span>}
+        </div>
 
         <div style={{ display: "flex", gap: "8px", marginBottom: "12px" }}>
           {[
