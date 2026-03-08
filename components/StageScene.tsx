@@ -246,15 +246,18 @@ function StageCharacters({
   onSelect: (href: string, name: string) => void;
 }) {
   const { viewport } = useThree();
-  const xOffset = viewport.width * 0.13;
-  const yOffset = -viewport.height * 0.17;
+  const aspect = viewport.width / viewport.height;
+  const isMobilePortrait = aspect < 0.85;
+  const xOffset = viewport.width * (isMobilePortrait ? 0.2 : 0.13);
+  const yOffset = -viewport.height * (isMobilePortrait ? 0.22 : 0.18);
+  const modelScale = isMobilePortrait ? 2.15 : 2.45;
 
   return (
     <>
       <Character
         modelPath={`${ASSET_BASE}/models/anna.glb`}
         position={[-xOffset, yOffset, 0]}
-        scale={2.45}
+        scale={modelScale}
         name="Елена"
         description="Лидер сцены и обладательница выдающихся наград."
         side="left"
@@ -265,7 +268,7 @@ function StageCharacters({
       <Character
         modelPath={`${ASSET_BASE}/models/olga.glb`}
         position={[xOffset, yOffset, 0]}
-        scale={2.45}
+        scale={modelScale}
         name="Дарья"
         description="Звезда труппы с яркой серией достижений."
         side="right"
@@ -452,9 +455,10 @@ export default function StageScene() {
       <div
         style={{
           position: "absolute",
-          left: "50%",
+          left: "12px",
+          right: "12px",
           top: "22px",
-          transform: "translateX(-50%)",
+          width: "auto",
           padding: "10px 16px",
           borderRadius: "999px",
           border: "1px solid rgba(255, 214, 144, 0.45)",

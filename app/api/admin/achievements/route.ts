@@ -40,15 +40,9 @@ function sanitizeRows(input: unknown): AdminRow[] {
 
 export async function POST(request: NextRequest) {
   const adminPassword = process.env.ADMIN_PASSWORD;
-  const hasSupabase =
-    Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   if (!adminPassword) {
     return NextResponse.json({ ok: false, error: "ADMIN_PASSWORD is not configured" }, { status: 500 });
-  }
-
-  if (!hasSupabase) {
-    return NextResponse.json({ ok: false, error: "Supabase env is not configured" }, { status: 500 });
   }
 
   let body: { mode?: string; password?: string; rows?: unknown } = {};
@@ -59,7 +53,7 @@ export async function POST(request: NextRequest) {
   }
 
   const cookieAuthorized = request.cookies.get(ADMIN_COOKIE)?.value === "1";
-  const passwordAuthorized = body.password === adminPassword;
+  const passwordAuthorized = (body.password ?? "").trim() === adminPassword;
   const authorized = cookieAuthorized || passwordAuthorized;
 
   if (!authorized) {
@@ -76,6 +70,12 @@ export async function POST(request: NextRequest) {
       maxAge: 60 * 60 * 8,
     });
     return authResponse;
+  }
+
+  const hasSupabase =
+    Boolean(process.env.SUPABASE_URL) && Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+  if (!hasSupabase) {
+    return NextResponse.json({ ok: false, error: "Supabase env is not configured" }, { status: 500 });
   }
 
   const rows = sanitizeRows(body.rows);

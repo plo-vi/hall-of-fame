@@ -506,6 +506,7 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [password, setPassword] = useState("");
+  const [adminSessionPassword, setAdminSessionPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [saveError, setSaveError] = useState("");
   const showCurtain = !curtainOpened;
@@ -523,14 +524,21 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
       const response = await fetch("/api/admin/achievements", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ mode: "auth", password }),
+        body: JSON.stringify({ mode: "auth", password: password.trim() }),
       });
 
       if (!response.ok) {
-        setLoginError("Неверный пароль");
+        const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+        const message = payload?.error;
+        if (response.status === 401) {
+          setLoginError("Неверный пароль");
+        } else {
+          setLoginError(message ?? "Ошибка входа. Проверь env и API.");
+        }
         return;
       }
 
+      setAdminSessionPassword(password.trim());
       setPassword("");
       setShowAdminLogin(false);
       setShowAdmin(true);
@@ -644,7 +652,7 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
             const response = await fetch("/api/admin/achievements", {
               method: "POST",
               headers: { "content-type": "application/json" },
-              body: JSON.stringify({ rows }),
+              body: JSON.stringify({ rows, password: adminSessionPassword }),
             });
             if (!response.ok) {
               const payload = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -656,6 +664,7 @@ export default function HomeClient({ initialRows }: { initialRows: HallRow[] }) 
           }}
           onCancelAndExit={() => {
             setSaveError("");
+            setAdminSessionPassword("");
             setShowAdmin(false);
           }}
         />
