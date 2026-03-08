@@ -287,6 +287,8 @@ export default function StageScene() {
   const [targetName, setTargetName] = useState("");
   const [bgReady, setBgReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
+  const [isMobileMode, setIsMobileMode] = useState(false);
+  const [deviceChecked, setDeviceChecked] = useState(false);
   const [hoverCard, setHoverCard] = useState<{
     name: string;
     description: string;
@@ -299,6 +301,17 @@ export default function StageScene() {
   const loadingFailSafeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px), (pointer: coarse)");
+    const apply = () => {
+      setIsMobileMode(media.matches);
+      setDeviceChecked(true);
+    };
+    apply();
+    media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
     const img = new Image();
     img.src = `${ASSET_BASE}/stage-new.png`;
     img.onload = () => setBgReady(true);
@@ -307,11 +320,11 @@ export default function StageScene() {
 
   useEffect(() => {
     if (sceneReady) return;
-    if (bgReady && !active && progress >= 95) {
+    if (bgReady && (isMobileMode || (!active && progress >= 95))) {
       const id = setTimeout(() => setSceneReady(true), 120);
       return () => clearTimeout(id);
     }
-  }, [active, bgReady, progress, sceneReady]);
+  }, [active, bgReady, isMobileMode, progress, sceneReady]);
 
   useEffect(() => {
     if (!bgReady || sceneReady) return;
@@ -358,6 +371,157 @@ export default function StageScene() {
       setTargetName("");
     }, 3600);
   };
+
+  if (!deviceChecked) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#090606",
+          backgroundImage: `url('${ASSET_BASE}/stage-new.png')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      />
+    );
+  }
+
+  if (isMobileMode) {
+    return (
+      <div
+        style={{
+          position: "relative",
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "#090606",
+          backgroundImage: `url('${ASSET_BASE}/stage-new.png')`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            position: "absolute",
+            left: "10px",
+            right: "10px",
+            top: "18px",
+            padding: "10px 14px",
+            borderRadius: "999px",
+            border: "1px solid rgba(255, 214, 144, 0.45)",
+            background: "rgba(17, 10, 6, 0.62)",
+            color: "#ffe2af",
+            fontFamily: "Georgia, serif",
+            fontSize: "13px",
+            letterSpacing: "0.03em",
+            textAlign: "center",
+            zIndex: 6,
+            opacity: isTransitioning ? 0 : 1,
+            transition: "opacity 240ms ease",
+          }}
+        >
+          Нажмите на персонажа, чтобы открыть персональный зал наград
+        </div>
+
+        {!sceneReady && (
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              display: "grid",
+              placeItems: "center",
+              background: "radial-gradient(circle at center, rgba(30,16,12,0.78) 0%, rgba(8,4,3,0.86) 100%)",
+              color: "#f6d39b",
+              fontFamily: "Georgia, serif",
+              zIndex: 8,
+              textAlign: "center",
+            }}
+          >
+            <div>
+              <p style={{ margin: 0, fontSize: "22px" }}>Подготовка сцены...</p>
+              <p style={{ margin: "8px 0 0", fontSize: "15px", color: "#eec28a" }}>
+                {Math.min(100, Math.round(progress))}%
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "flex-end",
+            justifyContent: "center",
+            gap: "12px",
+            padding: "0 12px 18vh",
+            zIndex: 7,
+          }}
+        >
+          <button
+            onClick={() => startTransition(withBasePath("/hall/elena/"), "Елена")}
+            style={{
+              flex: 1,
+              maxWidth: "220px",
+              border: "1px solid rgba(255, 214, 144, 0.55)",
+              borderRadius: "14px",
+              background: "rgba(12, 8, 5, 0.82)",
+              color: "#ffe2af",
+              fontFamily: "Georgia, serif",
+              fontSize: "18px",
+              padding: "14px 12px",
+            }}
+          >
+            Елена
+          </button>
+          <button
+            onClick={() => startTransition(withBasePath("/hall/darya/"), "Дарья")}
+            style={{
+              flex: 1,
+              maxWidth: "220px",
+              border: "1px solid rgba(255, 214, 144, 0.55)",
+              borderRadius: "14px",
+              background: "rgba(12, 8, 5, 0.82)",
+              color: "#ffe2af",
+              fontFamily: "Georgia, serif",
+              fontSize: "18px",
+              padding: "14px 12px",
+            }}
+          >
+            Дарья
+          </button>
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            background: "radial-gradient(circle at center, rgba(42, 14, 10, 0.55) 0%, rgba(8, 4, 3, 0.92) 100%)",
+            opacity: isTransitioning ? 1 : 0,
+            transition: "opacity 650ms ease",
+            pointerEvents: isTransitioning ? "auto" : "none",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              color: "#f6d39b",
+              fontFamily: "Georgia, serif",
+              fontSize: "clamp(22px, 6vw, 34px)",
+              letterSpacing: "0.06em",
+              textShadow: "0 0 24px rgba(255, 198, 114, 0.45)",
+            }}
+          >
+            {targetName ? `${targetName}: переход в зал наград...` : "Переход..."}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -534,9 +698,6 @@ export default function StageScene() {
     </div>
   );
 }
-
-useGLTF.preload(`${ASSET_BASE}/models/anna.glb`);
-useGLTF.preload(`${ASSET_BASE}/models/olga.glb`);
 useTexture.preload(`${ASSET_BASE}/stage-fog.png`);
 
 function BeamParticles({
