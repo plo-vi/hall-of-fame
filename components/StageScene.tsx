@@ -259,7 +259,7 @@ function StageCharacters({
         position={[-xOffset, yOffset, 0]}
         scale={modelScale}
         name="Елена"
-        description="Лидер сцены и обладательница выдающихся наград."
+        description="В команде с 2024 года. Склонна опираться на структурированные подходы и инструкции, лучше работает в условиях чётко поставленных задач."
         side="left"
         onHoverChange={onHoverChange}
         onClick={() => onSelect(withBasePath("/hall/elena/"), "Елена")}
@@ -270,7 +270,7 @@ function StageCharacters({
         position={[xOffset, yOffset, 0]}
         scale={modelScale}
         name="Дарья"
-        description="Звезда труппы с яркой серией достижений."
+        description="В команде с 2023 года. Отличается внимательностью, обязательностью и стремлением доводить рабочие задачи до результата"
         side="right"
         onHoverChange={onHoverChange}
         onClick={() => onSelect(withBasePath("/hall/darya/"), "Дарья")}
@@ -887,7 +887,7 @@ function StageFog() {
       ref={ref}
       position={[0, 0.4, -0.15]} // за персонажами
     >
-      <planeGeometry args={[14, 6]} />
+      <planeGeometry args={[25, 6]} />
       <meshBasicMaterial
         map={texture}
         transparent
