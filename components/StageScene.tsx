@@ -270,7 +270,7 @@ function StageCharacters({
         position={[xOffset, yOffset, 0]}
         scale={modelScale}
         name="Дарья"
-        description="В команде с 2023 года. Отличается внимательностью, обязательностью и стремлением доводить рабочие задачи до результата"
+        description="В команде с 2023 года. Ответственный и внимательный к деталям сотрудник, обязательностью и стремлением доводить рабочие задачи до результата"
         side="right"
         onHoverChange={onHoverChange}
         onClick={() => onSelect(withBasePath("/hall/darya/"), "Дарья")}
@@ -549,8 +549,6 @@ export default function StageScene() {
           <ambientLight intensity={0.6} color="#ffe0a3" />
 
           <Suspense fallback={null}>
-            <BeamParticles position={[-2.15, -0.9, 0]} direction={1} />
-            <BeamParticles position={[2.15, -0.9, 0]} direction={-1} />
             <FloatingDust />
 
             <StageFog />
@@ -692,7 +690,7 @@ export default function StageScene() {
 }
 useTexture.preload(`${ASSET_BASE}/stage-fog.png`);
 
-function BeamParticles({
+/*function BeamParticles({
   position,
   direction = 1,
 }: {
@@ -791,7 +789,7 @@ function BeamParticles({
       />
     </points>
   );
-}
+} */
 
 function FloatingDust() {
   const ref = useRef<THREE.Points>(null!);
